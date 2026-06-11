@@ -303,10 +303,16 @@
     </div>
   </section>
 
-  <!-- MOVIES GRID -->
+  <!-- NOW PLAYING -->
   <section class="section">
     <div class="section-title">현재 상영 중인 영화</div>
-    <div class="movies-grid" id="moviesGrid"></div>
+    <div class="movies-grid" id="nowPlayingGrid"></div>
+  </section>
+
+  <!-- TOP RATED -->
+  <section class="section" style="margin-top: 0;">
+    <div class="section-title">역대 최고 평점 영화 <span style="font-size:14px; color:#f5c518;">★ TOP RATED</span></div>
+    <div class="movies-grid" id="topRatedGrid"></div>
   </section>
 
   <footer>
@@ -324,8 +330,8 @@
     });
 
     // ── 스켈레톤 렌더링 ──────────────────────────────────────
-    function renderSkeletons(count = 20) {
-      const grid = document.getElementById('moviesGrid');
+    function renderSkeletons(gridId, count = 20) {
+      const grid = document.getElementById(gridId);
       grid.innerHTML = Array.from({ length: count }, () => `
         <div class="skeleton-card">
           <div class="skeleton skeleton-poster"></div>
@@ -353,8 +359,8 @@
     }
 
     // ── 영화 카드 렌더링 ─────────────────────────────────────
-    function renderMovies(movies) {
-      const grid = document.getElementById('moviesGrid');
+    function renderMovies(gridId, movies) {
+      const grid = document.getElementById(gridId);
       grid.innerHTML = movies.map(movie => {
         const poster = movie.poster_path
           ? `<img class="movie-poster" src="${IMG_BASE}/w342${movie.poster_path}"
@@ -387,7 +393,7 @@
 
     // ── 데이터 페치 ──────────────────────────────────────────
     async function fetchNowPlaying() {
-      renderSkeletons(20);
+      renderSkeletons('nowPlayingGrid', 20);
 
       try {
         const res = await fetch(
@@ -401,13 +407,38 @@
 
         if (movies.length === 0) throw new Error('영화 데이터가 없습니다.');
 
-        // 첫 번째 영화를 히어로 배너로
         setHero(movies[0]);
-        renderMovies(movies);
+        renderMovies('nowPlayingGrid', movies);
 
       } catch (err) {
         console.error(err);
-        document.getElementById('moviesGrid').innerHTML =
+        document.getElementById('nowPlayingGrid').innerHTML =
+          `<div class="error-msg" style="grid-column:1/-1">
+            영화를 불러오지 못했습니다.<br><small>${err.message}</small>
+          </div>`;
+      }
+    }
+
+    async function fetchTopRated() {
+      renderSkeletons('topRatedGrid', 20);
+
+      try {
+        const res = await fetch(
+          `${BASE_URL}/movie/top_rated?api_key=${API_KEY}&language=ko-KR&page=1`
+        );
+
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+        const data = await res.json();
+        const movies = data.results || [];
+
+        if (movies.length === 0) throw new Error('영화 데이터가 없습니다.');
+
+        renderMovies('topRatedGrid', movies);
+
+      } catch (err) {
+        console.error(err);
+        document.getElementById('topRatedGrid').innerHTML =
           `<div class="error-msg" style="grid-column:1/-1">
             영화를 불러오지 못했습니다.<br><small>${err.message}</small>
           </div>`;
@@ -415,6 +446,7 @@
     }
 
     fetchNowPlaying();
+    fetchTopRated();
   </script>
 </body>
 </html>
